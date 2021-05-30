@@ -3,8 +3,14 @@
     <menu id="menu">
         <section>
             <item>
-                <attribute name="label" translatable="yes">_Preference</attribute>
-                <attribute name="action">app.preference</attribute>
+                <attribute name="label" translatable="yes">_Merge</attribute>
+                <attribute name="action">app.merge</attribute>
+            </item>
+        </section>
+        <section>
+            <item>
+                <attribute name="label" translatable="yes">_Open</attribute>
+                <attribute name="action">app.open</attribute>
             </item>
         </section>
         <section>

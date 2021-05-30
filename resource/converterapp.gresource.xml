@@ -3,5 +3,6 @@
     <gresource prefix="/me/starry-s/converter">
         <file preprocess="xml-stripblanks">window.ui</file>
         <file preprocess="xml-stripblanks">menu.ui</file>
+        <file preprocess="xml-stripblanks">list.ui</file>
     </gresource>
 </gresources>

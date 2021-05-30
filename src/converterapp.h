@@ -12,6 +12,13 @@ G_DECLARE_FINAL_TYPE(
         GtkApplication
 )
 
+struct selected_file {
+        guint num;
+        char *format;
+        char *path;
+};
+
 ConverterApp *converter_app_new(void);
+
 
 #endif
