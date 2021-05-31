@@ -59,21 +59,11 @@ int release_file_list()
                 return 0;
         }
 
-        SV *p = NULL;
-
-        for (SV *p = List.begin->next; p != NULL && p->next != NULL; )
+        for (SV *p = List.begin; p != NULL; p = p->next)
         {
-                printf("delete node: %d\n", p->id);
-                free(p->prev);
-                p = p->next;
+                SV* pp = p;
+                free(pp);
         }
-
-        free(p);
-        printf("delete node: %d\n", List.begin->id);
-        free(List.begin);
-
-        List.begin = List.end = NULL;
-        List.size = 0;
 
         return 0;
 }
@@ -152,6 +142,10 @@ int insert_sort(
         bool inserted = false;
         SV *p = NULL;
 
+        if (List.begin == NULL) {
+                return -1;
+        }
+
         for (p = List.begin->next; p != NULL && !inserted; p = p->next) {
                 if (isbigger(p->name, name)) {
                         insert_at(path, name, p);
@@ -164,7 +158,6 @@ int insert_sort(
         } else if (!inserted) {
                 insert_back(path, name);
         }
-
 
         return 0;
 }
@@ -219,8 +212,6 @@ int default_str_is_larger(const char *const str1, const char *const str2)
                         break;
                 }
         }
-
-        printf("str1_num = %d, str2_num = %d\n", str1_num, str2_num);
 
         if (str1_num != str2_num) {
                 return str1_num > str2_num;

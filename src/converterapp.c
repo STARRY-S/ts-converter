@@ -3,6 +3,7 @@
 
 #include "converterapp.h"
 #include "converterappwin.h"
+#include "filelist.h"
 
 struct _ConverterApp
 {
@@ -13,7 +14,7 @@ G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
 
 static void converter_app_init(ConverterApp *app)
 {
-        ;
+        init_file_list();
 }
 
 static void converter_app_activate(GApplication *app)
@@ -81,10 +82,23 @@ static void on_open_response(GtkDialog *dialog, int response)
                 char *basename = g_file_get_basename(f);
                 char *pathname = g_file_get_path(f);
                 // open_file(file);
-                printf("select file: %s/%s\n", pathname, basename);
+                // printf("select file: %s/%s\n", pathname, basename);
+                insert_sort(basename, pathname, default_str_is_larger);
         }
 
+        calculate_file_id();
+        print_file_list();
+        printf("\n");
+
         gtk_window_destroy(GTK_WINDOW(dialog));
+}
+
+static void clear_list_activated(GSimpleAction *action,
+                                GVariant      *parameter,
+                                gpointer      app)
+{
+        release_file_list();
+        init_file_list();
 }
 
 static void open_file_activated(GSimpleAction *action,
@@ -178,6 +192,7 @@ static void quit_activated(GSimpleAction *action,
 static GActionEntry app_entries[] = {
         { "merge", merge_activated, NULL, NULL, NULL },
         { "open", open_file_activated, NULL, NULL, NULL },
+        { "clear_list", clear_list_activated, NULL, NULL, NULL },
         { "quit", quit_activated, NULL, NULL, NULL }
 };
 
