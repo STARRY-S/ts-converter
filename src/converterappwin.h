@@ -1,5 +1,5 @@
-#ifndef _EXAMPLEAPPWIN_H_
-#define _EXAMPLEAPPWIN_H_
+#ifndef _CONVERTERAPP_WIN_H_
+#define _CONVERTERAPP_WIN_H_
 
 #include <gtk/gtk.h>
 

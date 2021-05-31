@@ -3,6 +3,7 @@
 
 #include "converterapp.h"
 #include "converterappwin.h"
+#include "filelist.h"
 
 struct _ConverterApp
 {
@@ -13,7 +14,7 @@ G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
 
 static void converter_app_init(ConverterApp *app)
 {
-        ;
+        init_file_list();
 }
 
 static void converter_app_activate(GApplication *app)
@@ -81,8 +82,14 @@ static void on_open_response(GtkDialog *dialog, int response)
                 char *basename = g_file_get_basename(f);
                 char *pathname = g_file_get_path(f);
                 // open_file(file);
-                printf("select file: %s/%s\n", pathname, basename);
+                printf("select file: %s\n", pathname);
+                insert_sort(pathname, basename, default_str_is_larger);
+                printf("Insert %s: \n", basename);
+                print_file_list();
+                printf("\n");
         }
+        calculate_file_id();
+        print_file_list();
 
         gtk_window_destroy(GTK_WINDOW(dialog));
 }
@@ -165,13 +172,14 @@ static void merge_activated(GSimpleAction *action,
 
         GtkTextBuffer *buffer;
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-        gtk_text_buffer_set_text(buffer, "Hello World!", 12);
+        gtk_text_buffer_set_text(buffer, "Test Log info here!", 12);
 }
 
 static void quit_activated(GSimpleAction *action,
                            GVariant      *parameter,
                            gpointer      app)
 {
+        release_file_list();
         g_application_quit(G_APPLICATION(app));
 }
 
@@ -209,6 +217,10 @@ static void converter_app_startup(GApplication *app)
                 "app.open",
                 open_accels
         );
+}
+
+static void converter_app_finalize(ConverterAppClass *class)
+{
 }
 
 static void converter_app_class_init(ConverterAppClass *class)

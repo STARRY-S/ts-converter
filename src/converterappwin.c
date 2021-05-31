@@ -156,36 +156,6 @@ ConverterAppWindow *converter_app_window_new(ConverterApp *app)
 
 void converter_app_window_open(ConverterAppWindow *window, GFile *file)
 {
-        // char *basename;
-        // GtkWidget *scrolled, *view;
-        // char *contents;
-        // gsize length;
-        //
-        // basename = g_file_get_basename(file);
-        //
-        // scrolled = gtk_scrolled_window_new();
-        // gtk_widget_set_hexpand(scrolled, TRUE);
-        // gtk_widget_set_vexpand(scrolled, TRUE);
-        // view = gtk_text_view_new();
-        // gtk_text_view_set_editable(GTK_TEXT_VIEW(view), FALSE);
-        // gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(view), FALSE);
-        // gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), view);
-        // gtk_stack_add_titled(
-        //         GTK_STACK(win->stack), scrolled, basename, basename
-        // );
-        //
-        // if (g_file_load_contents(file, NULL, &contents, &length, NULL, NULL))
-        // {
-        //         GtkTextBuffer *buffer;
-        //
-        //         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(view));
-        //         gtk_text_buffer_set_text(buffer, contents, length);
-        //         g_free(contents);
-        // } else {
-        //         printf("failed to open file.\n");
-        // }
-        //
-
         /* create file list store */
         GtkWidget *grid_view;
 
