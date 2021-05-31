@@ -5,26 +5,31 @@ project('converter',
 gtkdep = dependency('gtk4')
 gnome = import('gnome')
 
-converter_resource = gnome.compile_resources(
+resources = gnome.compile_resources(
     'as-resources', 'resource/converterapp.gresource.xml',
     source_dir: 'resource'
 )
 
 c_args = ['-std=c11']
 
-source = [
+sources = [
   'src/main.c',
-  'src/converterapp.h',
   'src/converterapp.c',
-  'src/converterappwin.h',
   'src/converterappwin.c',
+  'src/filelist.c',
+  'src/merge-emitter.c'
+]
+
+headers = [
+  'src/converterapp.h',
+  'src/converterappwin.h',
   'src/filelist.h',
-  'src/filelist.c'
+  'src/merge-emitter.h'
 ]
 
 executable(
-  'main',
-  source,
-  converter_resource,
+  'converter',
+  sources: sources + headers + resources,
   c_args: c_args,
-  dependencies : gtkdep)
+  dependencies : gtkdep
+)
