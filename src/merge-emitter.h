@@ -3,14 +3,17 @@
 
 #include <gtk/gtk.h>
 
-#define MERGE_EMITTER (merge_emitter_get_type())
+#define MERGE_EMITTER_TYPE (merge_emitter_get_type())
 
-G_DECLARE_FINAL_TYPE(MergeEmitter,
+G_DECLARE_FINAL_TYPE(
+        MergeEmitter,
         merge_emitter,
-        CONVERTER,
-        APP_EMITTER,
+        MERGE,
+        EMITTER,
         GObject
 )
+
+MergeEmitter *merge_emitter_new(void);
 
 
 #endif

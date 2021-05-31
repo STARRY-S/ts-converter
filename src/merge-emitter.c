@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 
+#include "merge-emitter.h"
 /* refer: https://github.com/AlynxZhou/showmethekey/blob/master/showmethekey-gtk/smtk-keys-emitter.c*/
 
 struct _MergeEmitter {
@@ -11,7 +12,7 @@ struct _MergeEmitter {
 	gboolean polling;
 	GError *error;
 };
-G_DEFINE_TYPE(MergeEmitter, merge_emitter, G_TYPE_OBJECT)
+G_DEFINE_TYPE(MergeEmitter, merge_emitter, G_TYPE_OBJECT);
 
 static gpointer poller_function(gpointer user_data)
 {
@@ -62,7 +63,7 @@ static void merge_emitter_init(MergeEmitter *emitter)
         // spawn a subprocess, execute ffmpeg command.
         g_subprocess_wait_async(emitter->cli, NULL, NULL, NULL);
         emitter->cli_out = g_data_input_stream_new(
-                g_subprocess_get_stdout_pipe(emitter->cli);
+                g_subprocess_get_stdout_pipe(emitter->cli)
         );
 
         emitter->polling = TRUE;
@@ -78,21 +79,22 @@ static void merge_emitter_init(MergeEmitter *emitter)
         }
 }
 
-static void merge_emitter_finalize(GObject *object)
-{
-        MergeEmitter *emitter = MERGE_EMITTER(user_data);
+// static void merge_emitter_finalize(GObject *object)
+// {
+//         MergeEmitter *emitter = MERGE_EMITTER_TYPE(user_data);
+//
+//         G_OBJECT_CLASS(merge_emitter_parent_class)->finalize(object);
+// }
 
-        G_OBJECT_CLASS(merge_emitter_parent_class)->finalize(object);
+static void merge_emitter_class_init(MergeEmitterClass *emitter)
+{
+        // GObjectClass *object_class = G_OBJECT_CLASS(emitter);
+
+        // object_class->finalize = merge_emitter_finalize;
 }
 
-static void merge_emitter_class_init(MergeEmitter *emitter_class)
+MergeEmitter *merge_emitter_new(void)
 {
-        GObjectClass *object_class = G_OBJECT_CLASS(emitter_class);
-
-        object_class->finalize = merge_emitter_finalize;
-}
-
-MergeEmitter *merge_emitter_new()
-{
-        MergeEmitter *emitter = g_object_new(MERGE_EMITTER, NULL);
+        MergeEmitter *emitter = g_object_new(MERGE_EMITTER_TYPE, NULL);
+        return emitter;
 }
