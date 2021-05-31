@@ -1,5 +1,5 @@
-#ifndef _CONVERTERAP_H_
-#define _CONVERTERAP_H_
+#ifndef _EXAMPLEAPP_H_
+#define _EXAMPLEAPP_H_
 
 #include <gtk/gtk.h>
 
