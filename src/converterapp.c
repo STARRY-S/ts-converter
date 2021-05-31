@@ -4,6 +4,7 @@
 #include "converterapp.h"
 #include "converterappwin.h"
 #include "filelist.h"
+#include "merge-emitter.h"
 
 struct _ConverterApp
 {
@@ -187,6 +188,7 @@ static void on_save_response(GtkDialog *dialog, int response)
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
         gtk_text_buffer_set_text(buffer, path, strlen(path));
 
+        MergeEmitter *emitter = merge_emitter_new();
 
 }
 
@@ -228,6 +230,7 @@ static void merge_activated(GSimpleAction *action,
                 GTK_FILE_CHOOSER(dialog),
                 "output.mp4"
         );
+
         gtk_widget_show(dialog);
 }
 
@@ -235,6 +238,7 @@ static void quit_activated(GSimpleAction *action,
                            GVariant      *parameter,
                            gpointer      app)
 {
+        release_file_list();
         g_application_quit(G_APPLICATION(app));
 }
 
