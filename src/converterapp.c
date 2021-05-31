@@ -140,16 +140,21 @@ static void open_file_activated(GSimpleAction *action,
                 TRUE
         );
 
-        // gtk_window_set_transient_for(GTK_WINDOW(dialog), window);
         gtk_widget_show(dialog);
 }
 
-static void merge_activated(GSimpleAction *action,
-                            GVariant      *parameter,
-                            gpointer      app)
+static void on_save_response(GtkDialog *dialog, int response)
 {
-        GList *wins = gtk_application_get_windows(GTK_APPLICATION(app));
-        ConverterAppWindow *window = CONVERTER_APP_WINDOW(wins->data);
+        GFile *file = NULL;
+        if (response == GTK_RESPONSE_ACCEPT)
+        {
+                GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
+
+                file = gtk_file_chooser_get_file(chooser);
+                gtk_window_destroy(GTK_WINDOW (dialog));
+        } else {
+                gtk_window_destroy(GTK_WINDOW (dialog));
+        }
 
         GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
         gtk_widget_set_margin_start(vbox, 8);
@@ -174,12 +179,56 @@ static void merge_activated(GSimpleAction *action,
         gtk_window_set_title(GTK_WINDOW(mwindow), "Merge Videos");
         gtk_window_set_child(GTK_WINDOW(mwindow), vbox);
         gtk_window_set_default_size(GTK_WINDOW(mwindow), 800, 600);
-        gtk_window_set_transient_for(mwindow, GTK_WINDOW(window));
+        gtk_window_set_transient_for(mwindow, NULL);
         gtk_window_present(GTK_WINDOW(mwindow));
 
         GtkTextBuffer *buffer;
+        char *path = g_file_get_path(file);
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-        gtk_text_buffer_set_text(buffer, "Hello World!", 12);
+        gtk_text_buffer_set_text(buffer, path, strlen(path));
+
+
+}
+
+static void merge_activated(GSimpleAction *action,
+                            GVariant      *parameter,
+                            gpointer      app)
+{
+        /* file picker */
+        GList *wins = gtk_application_get_windows(GTK_APPLICATION(app));
+        ConverterAppWindow *window = CONVERTER_APP_WINDOW(wins->data);
+
+        GtkFileChooserAction save_action = GTK_FILE_CHOOSER_ACTION_SAVE;
+        GtkWidget *dialog = gtk_file_chooser_dialog_new(
+                "Merge Video",
+                GTK_WINDOW(window),
+                save_action,
+                "_Cancel",
+                GTK_RESPONSE_CANCEL,
+                "_Save",
+                GTK_RESPONSE_ACCEPT,
+                NULL
+        );
+
+        g_signal_connect(
+                dialog,
+                "response",
+                G_CALLBACK(on_save_response),
+                NULL
+        );
+
+        g_signal_connect(
+                dialog,
+                "response",
+                G_CALLBACK(on_cancel_response),
+                NULL
+        );
+
+        gtk_file_chooser_set_current_name(
+                GTK_FILE_CHOOSER(dialog),
+                "output.mp4"
+        );
+        gtk_widget_show(dialog);
 }
 
 static void quit_activated(GSimpleAction *action,
