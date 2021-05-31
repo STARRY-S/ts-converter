@@ -18,6 +18,7 @@ static gpointer poller_function(gpointer user_data)
 {
         MergeEmitter *emitter = MERGE_EMITTER(user_data);
         while (emitter->polling) {
+                printf("pooling.\n");
                 GError *read_line_error = NULL;
                 char *line = g_data_input_stream_read_line(
                         emitter->cli_out,
@@ -52,7 +53,7 @@ static void merge_emitter_init(MergeEmitter *emitter)
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
                 "pkexec",
-                "ffmpeg -version",
+                "sleep 1 && ffmpeg -version",
                 NULL
         );
 
@@ -77,6 +78,7 @@ static void merge_emitter_init(MergeEmitter *emitter)
         if (emitter->poller == NULL) {
                 return;
         }
+        printf("emitter init.\n");
 }
 
 // static void merge_emitter_finalize(GObject *object)
@@ -88,6 +90,7 @@ static void merge_emitter_init(MergeEmitter *emitter)
 
 static void merge_emitter_class_init(MergeEmitterClass *emitter)
 {
+        printf("merge class init\n");
         // GObjectClass *object_class = G_OBJECT_CLASS(emitter);
 
         // object_class->finalize = merge_emitter_finalize;
