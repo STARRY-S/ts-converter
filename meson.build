@@ -1,6 +1,6 @@
 project('converter',
   'c',
-  license: 'Apache-2.0',
+  license: 'Apache-2.0'
 )
 gtkdep = dependency('gtk4')
 gnome = import('gnome')
@@ -14,17 +14,17 @@ c_args = ['-std=c11']
 
 sources = [
   'src/main.c',
-  'src/converterapp.c',
-  'src/converterappwin.c',
-  'src/filelist.c',
-  'src/merge-emitter.c'
+  'src/converter-app.c',
+  'src/converter-app-win.c',
+  'src/converter-filelist.c',
+  'src/converter-emitter.c'
 ]
 
 headers = [
-  'src/converterapp.h',
-  'src/converterappwin.h',
-  'src/filelist.h',
-  'src/merge-emitter.h'
+  'src/converter-app.h',
+  'src/converter-app-win.h',
+  'src/converter-filelist.h',
+  'src/converter-emitter.h'
 ]
 
 executable(

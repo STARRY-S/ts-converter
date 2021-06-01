@@ -1,22 +1,22 @@
 #include <gtk/gtk.h>
 
-#include "merge-emitter.h"
-/* refer: https://github.com/AlynxZhou/showmethekey/blob/master/showmethekey-gtk/smtk-keys-emitter.c*/
+#include "converter-emitter.h"
+/* refer: https://github.com/AlynxZhou/showmethekey */
 
-struct _MergeEmitter {
+struct _ConverterEmitter {
 	GObject parent_instance;
-
 	GSubprocess *cli;
 	GDataInputStream *cli_out;
 	GThread *poller;
 	gboolean polling;
 	GError *error;
 };
-G_DEFINE_TYPE(MergeEmitter, merge_emitter, G_TYPE_OBJECT);
+
+G_DEFINE_TYPE(ConverterEmitter, converter_emitter, G_TYPE_OBJECT);
 
 static gpointer poller_function(gpointer user_data)
 {
-        MergeEmitter *emitter = MERGE_EMITTER(user_data);
+        ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
         while (emitter->polling) {
                 // printf("pooling.\n");
                 GError *read_line_error = NULL;
@@ -44,7 +44,7 @@ static gpointer poller_function(gpointer user_data)
         return NULL;
 }
 
-static void merge_emitter_init(MergeEmitter *emitter)
+static void converter_emitter_init(ConverterEmitter *emitter)
 {
         emitter->error = NULL;
         emitter->cli = g_subprocess_new(
@@ -81,23 +81,23 @@ static void merge_emitter_init(MergeEmitter *emitter)
         printf("emitter init.\n");
 }
 
-// static void merge_emitter_finalize(GObject *object)
+// static void converter_emitter_finalize(GObject *object)
 // {
-//         MergeEmitter *emitter = MERGE_EMITTER_TYPE(user_data);
+//         ConverterEmitter *emitter = CONVERTER_EMITTER_TYPE(user_data);
 //
-//         G_OBJECT_CLASS(merge_emitter_parent_class)->finalize(object);
+//         G_OBJECT_CLASS(converter_emitter_parent_class)->finalize(object);
 // }
 
-static void merge_emitter_class_init(MergeEmitterClass *emitter)
+static void converter_emitter_class_init(ConverterEmitterClass *emitter)
 {
         printf("merge class init\n");
         // GObjectClass *object_class = G_OBJECT_CLASS(emitter);
 
-        // object_class->finalize = merge_emitter_finalize;
+        // object_class->finalize = converter_emitter_finalize;
 }
 
-MergeEmitter *merge_emitter_new(void)
+ConverterEmitter *converter_emitter_new(void)
 {
-        MergeEmitter *emitter = g_object_new(MERGE_EMITTER_TYPE, NULL);
+        ConverterEmitter *emitter = g_object_new(CONVERTER_EMITTER_TYPE, NULL);
         return emitter;
 }

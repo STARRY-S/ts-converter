@@ -1,5 +1,5 @@
-#ifndef _FILELIST_H_
-#define _FILELIST_H_
+#ifndef __CONVERTER_FILELIST_H__
+#define __CONVERTER_FILELIST_H__
 
 #ifndef FILE_LIST_SIZE
 #define FILE_LIST_SIZE 512

@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "converterapp.h"
-#include "converterappwin.h"
+#include "converter-app.h"
+#include "converter-app-win.h"
 
 struct _ConverterAppWindow
 {

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "filelist.h"
+#include "converter-filelist.h"
 
 typedef struct video {
         int id;

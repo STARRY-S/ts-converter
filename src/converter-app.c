@@ -1,10 +1,10 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 
-#include "converterapp.h"
-#include "converterappwin.h"
-#include "filelist.h"
-#include "merge-emitter.h"
+#include "converter-app.h"
+#include "converter-app-win.h"
+#include "converter-filelist.h"
+#include "converter-emitter.h"
 
 struct _ConverterApp
 {
@@ -188,8 +188,7 @@ static void on_save_response(GtkDialog *dialog, int response)
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
         gtk_text_buffer_set_text(buffer, path, strlen(path));
 
-        MergeEmitter *emitter = merge_emitter_new();
-
+        ConverterEmitter *emitter = converter_emitter_new();
 }
 
 static void merge_activated(GSimpleAction *action,

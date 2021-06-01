@@ -1,19 +1,19 @@
-#ifndef __MERGE_EMITTER_H__
-#define __MERGE_EMITTER_H__
+#ifndef __CONVERTER_EMITTER_H__
+#define __CONVERTER_EMITTER_H__
 
 #include <gtk/gtk.h>
 
-#define MERGE_EMITTER_TYPE (merge_emitter_get_type())
+#define CONVERTER_EMITTER_TYPE (converter_emitter_get_type())
 
 G_DECLARE_FINAL_TYPE(
-        MergeEmitter,
-        merge_emitter,
-        MERGE,
+        ConverterEmitter,
+        converter_emitter,
+        CONVERTER,
         EMITTER,
         GObject
 )
 
-MergeEmitter *merge_emitter_new(void);
+ConverterEmitter *converter_emitter_new(void);
 
 
 #endif
