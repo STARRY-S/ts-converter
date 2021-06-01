@@ -9,6 +9,7 @@
 struct _ConverterApp
 {
         GtkApplication parent;
+        ConverterAppWindow *window;
 };
 
 G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
@@ -20,13 +21,12 @@ static void converter_app_init(ConverterApp *app)
 
 static void converter_app_activate(GApplication *app)
 {
-        ConverterAppWindow *window;
-
-        window = converter_app_window_new(CONVERTER_APP(app));
+        CONVERTER_APP(app)->window =
+                converter_app_window_new(CONVERTER_APP(app));
 
         /* finish & show */
-        converter_app_window_open(window, NULL);
-        gtk_window_present(GTK_WINDOW(window));
+        converter_app_window_open(CONVERTER_APP(app)->window);
+        gtk_window_present(GTK_WINDOW(CONVERTER_APP(app)->window));
 }
 
 void converter_app_open(GApplication *app,
@@ -107,8 +107,7 @@ static void open_file_activated(GSimpleAction *action,
                                 gpointer      app)
 {
         /* file picker */
-        GList *wins = gtk_application_get_windows(GTK_APPLICATION(app));
-        ConverterAppWindow *window = CONVERTER_APP_WINDOW(wins->data);
+        ConverterAppWindow *window = CONVERTER_APP(app)->window;
 
         GtkFileChooserAction open_action = GTK_FILE_CHOOSER_ACTION_OPEN;
         GtkWidget *dialog = gtk_file_chooser_dialog_new(
@@ -188,7 +187,7 @@ static void on_save_response(GtkDialog *dialog, int response)
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
         gtk_text_buffer_set_text(buffer, path, strlen(path));
 
-        ConverterEmitter *emitter = converter_emitter_new();
+        // ConverterEmitter *emitter = converter_emitter_new();
 }
 
 static void merge_activated(GSimpleAction *action,
@@ -196,8 +195,7 @@ static void merge_activated(GSimpleAction *action,
                             gpointer      app)
 {
         /* file picker */
-        GList *wins = gtk_application_get_windows(GTK_APPLICATION(app));
-        ConverterAppWindow *window = CONVERTER_APP_WINDOW(wins->data);
+        ConverterAppWindow *window = CONVERTER_APP(app)->window;
 
         GtkFileChooserAction save_action = GTK_FILE_CHOOSER_ACTION_SAVE;
         GtkWidget *dialog = gtk_file_chooser_dialog_new(

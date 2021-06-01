@@ -13,14 +13,7 @@ G_DECLARE_FINAL_TYPE(
         GtkApplicationWindow
 )
 
-enum {
-        COLUMN_NUMBER,
-        COLUMN_FORMAT,
-        COLUMN_FILENAME,
-        NUM_COLUMNS
-};
-
 ConverterAppWindow *converter_app_window_new(ConverterApp *app);
-void converter_app_window_open(ConverterAppWindow *win, GFile *file);
+void converter_app_window_open(ConverterAppWindow *win);
 
 #endif

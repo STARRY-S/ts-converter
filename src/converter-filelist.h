@@ -5,6 +5,24 @@
 #define FILE_LIST_SIZE 512
 #endif
 
+struct video {
+        int id;
+        int file_format;
+        char* path;
+        char* name;
+
+        struct video *next;
+        struct video *prev;
+};
+
+/* 双向链表 */
+struct List {
+        struct video *begin;
+        struct video *end;
+        unsigned size;
+};
+
+struct List *converter_filelist_get_list();
 int init_file_list();
 int release_file_list();
 int insert_back(const char *const path, const char *const name);

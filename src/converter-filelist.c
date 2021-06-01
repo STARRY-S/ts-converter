@@ -3,25 +3,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <glib.h>
 
 #include "converter-filelist.h"
 
-typedef struct video {
-        int id;
-        int file_format;
-        char* path;
-        char* name;
-
-        struct video *next;
-        struct video *prev;
-} SV;
-
-/* 双向链表 */
-struct List {
-        struct video *begin;
-        struct video *end;
-        uint32_t size;
-};
+typedef struct video SV;
 
 /*
  * 双向链表
@@ -38,7 +24,12 @@ static struct List List = {
 int insert_at(const char *path,const char *name, SV* here);
 bool isNumber(char cc);
 bool isAlphabet(char cc);
+
 /* public methods: */
+struct List *converter_filelist_get_list()
+{
+        return &List;
+}
 
 int init_file_list()
 {
