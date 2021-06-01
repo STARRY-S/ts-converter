@@ -15,5 +15,6 @@ G_DECLARE_FINAL_TYPE(
 
 ConverterAppWindow *converter_app_window_new(ConverterApp *app);
 void converter_app_window_open(ConverterAppWindow *win);
+void converter_app_window_update_list(ConverterAppWindow *window);
 
 #endif

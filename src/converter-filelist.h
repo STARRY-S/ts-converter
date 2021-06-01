@@ -7,7 +7,7 @@
 
 struct video {
         int id;
-        int file_format;
+        char *file_format;
         char* path;
         char* name;
 

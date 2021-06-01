@@ -237,7 +237,7 @@ int get_file_list_size()
 /* For debug */
 void print_file_list()
 {
-        for (SV* p = List.begin->next; p != NULL; p = p->next)
+        for (SV* p = List.begin->next; p != List.end; p = p->next)
         {
                 printf("id: %d, path: %s\n", p->id, p->path);
         }

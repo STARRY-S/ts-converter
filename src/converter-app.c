@@ -68,7 +68,7 @@ static void on_cancel_response(GtkDialog *dialog, int response)
         gtk_window_destroy(GTK_WINDOW(dialog));
 }
 
-static void on_open_response(GtkDialog *dialog, int response)
+static void on_open_response(GtkDialog *dialog, int response, gpointer window)
 {
         if (response != GTK_RESPONSE_ACCEPT) {
                 return;
@@ -83,14 +83,17 @@ static void on_open_response(GtkDialog *dialog, int response)
                 char *basename = g_file_get_basename(f);
                 char *pathname = g_file_get_path(f);
                 // open_file(file);
-                // printf("select file: %s/%s\n", pathname, basename);
-                insert_sort(basename, pathname, default_str_is_larger);
+                insert_sort(pathname, basename, default_str_is_larger);
         }
 
         calculate_file_id();
+
+#ifndef NDEBUG
         print_file_list();
         printf("\n");
+#endif
 
+        converter_app_window_update_list(window);
         gtk_window_destroy(GTK_WINDOW(dialog));
 }
 
@@ -98,8 +101,10 @@ static void clear_list_activated(GSimpleAction *action,
                                 GVariant      *parameter,
                                 gpointer      app)
 {
+        ConverterAppWindow *window = CONVERTER_APP(app)->window;
         release_file_list();
         init_file_list();
+        converter_app_window_update_list(window);
 }
 
 static void open_file_activated(GSimpleAction *action,
@@ -125,7 +130,7 @@ static void open_file_activated(GSimpleAction *action,
                 dialog,
                 "response",
                 G_CALLBACK(on_open_response),
-                NULL
+                window
         );
 
         g_signal_connect(

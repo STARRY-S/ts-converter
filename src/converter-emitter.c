@@ -29,7 +29,7 @@ static gpointer poller_function(gpointer user_data)
 
                 if (line == NULL) {
                         if (read_line_error != NULL) {
-                                g_critical("Read line error: %s\n",
+                                fprintf(stderr, "Read line error: %s\n",
                                                 read_line_error->message);
                                 g_error_free(read_line_error);
                         }
@@ -68,7 +68,8 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
-                "ffmpeg",
+                // "pkexec",
+		"ffmpeg",
                 "-version",
                 NULL
         );
@@ -97,7 +98,6 @@ static void converter_emitter_init(ConverterEmitter *emitter)
         if (emitter->poller == NULL) {
                 return;
         }
-        printf("emitter init.\n");
 }
 
 // static void converter_emitter_finalize(GObject *object)
@@ -111,7 +111,6 @@ static void converter_emitter_class_init(ConverterEmitterClass *emitter)
 {
         printf("merge class init\n");
         // GObjectClass *object_class = G_OBJECT_CLASS(emitter);
-
         // object_class->finalize = converter_emitter_finalize;
 }
 

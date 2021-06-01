@@ -18,23 +18,6 @@ G_DEFINE_TYPE(ConverterAppWindow,
         GTK_TYPE_APPLICATION_WINDOW
 );
 
-static struct selected_file flist[] = {
-        { 1, "mp4", "./bob.mp4" },
-        { 2, "mp4", "./hello.mp4" },
-        { 3, "mp4", "/home/Alice/Videos/game.mp4" },
-        { 4, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 5, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 6, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 7, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 8, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 9, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 10, "mp4", "/usr/share/nginx/videos/share.mp4" },
-        { 10, "mp4", "/usr/share/nginx/videos/share0.mp4" },
-        { 11, "mp4", "/usr/share/nginx/videos/share1.mp4" },
-        { 12, "mp4", "/usr/share/nginx/videos/share2.mp4" },
-        { 13, "mp4", "/usr/share/nginx/videos/share3.mp4" }
-};
-
 enum {
         COLUMN_NUMBER,
         COLUMN_FORMAT,
@@ -51,19 +34,32 @@ static GtkTreeModel *init_model()
         store = gtk_list_store_new(
                 NUM_COLUMNS,
                 G_TYPE_UINT,
-                G_TYPE_STRING,
+                G_TYPE_INT,
                 G_TYPE_STRING
         );
 
+        struct List *list = converter_filelist_get_list();
+        if (list == NULL || list->begin == NULL) {
+                gtk_list_store_append(store, &iter);
+                gtk_list_store_set(
+                        store, &iter,
+                        COLUMN_NUMBER, 0,
+                        COLUMN_FORMAT, 0,
+                        COLUMN_FILENAME, "Please import file first.",
+                        -1
+                );
+                return GTK_TREE_MODEL(store);
+        }
+
         /* add data to the list store */
-        for (int i = 0; i < G_N_ELEMENTS(flist); i++)
+        for (struct video *p = list->begin->next; p != NULL; p = p->next)
         {
                 gtk_list_store_append(store, &iter);
                 gtk_list_store_set(
                         store, &iter,
-                        COLUMN_NUMBER, flist[i].num,
-                        COLUMN_FORMAT, flist[i].format,
-                        COLUMN_FILENAME, flist[i].path,
+                        COLUMN_NUMBER, p->id,
+                        COLUMN_FORMAT, p->id,
+                        COLUMN_FILENAME, p->path,
                         -1
                 );
         }
@@ -117,28 +113,37 @@ static void converter_app_window_class_init(ConverterAppWindowClass *class)
 
 ConverterAppWindow *converter_app_window_new(ConverterApp *app)
 {
-        return g_object_new(CONVERTER_APP_WINDOW_TYPE, "application", app, NULL);
+        return g_object_new(CONVERTER_APP_WINDOW_TYPE,
+                "application", app, NULL
+        );
+}
+
+void converter_app_window_update_list(ConverterAppWindow *window)
+{
+        GtkTreeModel *model = init_model();
+        gtk_tree_view_set_model(window->treeview, model);
+        g_object_unref(model);
+
+        // gtk_list_store_clear(GTK_LIST_STORE(window->treeview) );
 }
 
 void converter_app_window_open(ConverterAppWindow *window)
 {
-        GtkWidget *grid_view;
-
-        grid_view = gtk_grid_new();
-        gtk_widget_set_margin_start(grid_view, 8);
-        gtk_widget_set_margin_end(grid_view, 8);
-        gtk_widget_set_margin_top(grid_view, 8);
-        gtk_widget_set_margin_bottom(grid_view, 8);
-        gtk_window_set_child(GTK_WINDOW(window), (GtkWidget*) grid_view);
+        GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+        gtk_widget_set_margin_start(vbox, 8);
+        gtk_widget_set_margin_end(vbox, 8);
+        gtk_widget_set_margin_top(vbox, 8);
+        gtk_widget_set_margin_bottom(vbox, 8);
+        gtk_window_set_child(GTK_WINDOW(window), GTK_WIDGET(vbox));
 
         GtkWidget *scroll_view = gtk_scrolled_window_new();
         gtk_widget_set_hexpand(scroll_view, TRUE);
         gtk_widget_set_vexpand(scroll_view, TRUE);
-        gtk_scrolled_window_set_has_frame(GTK_SCROLLED_WINDOW(scroll_view), TRUE);
-        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_view),
-                                        GTK_POLICY_NEVER,
-                                        GTK_POLICY_AUTOMATIC);
-        gtk_grid_attach(GTK_GRID(grid_view), scroll_view, 0, 0, 3, 1);
+        // gtk_scrolled_window_set_has_frame(GTK_SCROLLED_WINDOW(scroll_view), TRUE);
+        // gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_view),
+                                        // GTK_POLICY_NEVER,
+                                        // GTK_POLICY_AUTOMATIC);
+        gtk_box_append(GTK_BOX(vbox), scroll_view);
 
         /* create tree model */
 
