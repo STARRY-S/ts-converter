@@ -44,6 +44,22 @@ static gpointer poller_function(gpointer user_data)
         return NULL;
 }
 
+static void command_async_ready(GObject *object,
+                        	GAsyncResult *res,
+                        	gpointer user_data)
+{
+	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
+	GError *read_line_error = NULL;
+	char *line = g_data_input_stream_read_line(
+		emitter->cli_out,
+		NULL,
+		NULL,
+		&read_line_error
+	);
+
+	printf("Command output: %s\n", line);
+}
+
 static void converter_emitter_init(ConverterEmitter *emitter)
 {
         emitter->error = NULL;
@@ -52,8 +68,8 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
-                "pkexec",
-                "sleep 1 && ffmpeg -version &>1 ",
+                "ffmpeg",
+                "-version",
                 NULL
         );
 
@@ -62,7 +78,10 @@ static void converter_emitter_init(ConverterEmitter *emitter)
         }
 
         // spawn a subprocess, execute ffmpeg command.
-        g_subprocess_wait_async(emitter->cli, NULL, NULL, NULL);
+        g_subprocess_wait_async(emitter->cli,
+		NULL,				// cancellable
+		NULL,		// callback
+		NULL);				// user_data
         emitter->cli_out = g_data_input_stream_new(
                 g_subprocess_get_stdout_pipe(emitter->cli)
         );

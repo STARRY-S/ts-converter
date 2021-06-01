@@ -187,7 +187,7 @@ static void on_save_response(GtkDialog *dialog, int response)
         buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
         gtk_text_buffer_set_text(buffer, path, strlen(path));
 
-        // ConverterEmitter *emitter = converter_emitter_new();
+        ConverterEmitter *emitter = converter_emitter_new();
 }
 
 static void merge_activated(GSimpleAction *action,
