@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "converter-app.h"
 #include "converter-app-win.h"
@@ -163,6 +164,7 @@ static void on_save_response(GtkFileChooserNative *dialog,
         {
                 GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
                 file = gtk_file_chooser_get_file(chooser);
+                g_object_unref(dialog);
         } else {
                 g_object_unref(dialog);
                 return;
@@ -171,9 +173,10 @@ static void on_save_response(GtkFileChooserNative *dialog,
         /* emitter will finalize itself when merge window close */
         app->emitter = converter_emitter_new();
         converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
+        usleep(20);
+        converter_emitter_poller_init(app->emitter);
 
         // struct List *list = converter_filelist_get_list();
-        g_object_unref(dialog);
 }
 
 static void merge_activated(GSimpleAction *action,
