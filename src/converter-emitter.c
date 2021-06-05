@@ -10,7 +10,8 @@ struct _ConverterEmitter {
 	GDataInputStream *cli_out;
 	GDataInputStream *cli_err;
 	GThread *poller;
-	gboolean polling;
+	gboolean running;
+	gboolean initialized;
 	GError *error;
 
 	GtkTextBuffer *buffer;
@@ -21,7 +22,14 @@ G_DEFINE_TYPE(ConverterEmitter, converter_emitter, G_TYPE_OBJECT);
 static gpointer poller_function(gpointer user_data)
 {
         ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
-        while (emitter->polling) {
+
+	// wait buffer and text viewer initialized
+	// see https://github.com/ix/notewell/issues/3
+	while (emitter->buffer == NULL && !emitter->initialized) {
+		continue;
+	}
+
+        while (TRUE) {
 		GError *read_out_line_error = NULL;
                 GError *read_err_line_error = NULL;
                 char *out_line = g_data_input_stream_read_line(
@@ -51,6 +59,11 @@ static gpointer poller_function(gpointer user_data)
                                                 read_err_line_error->message);
                                 g_error_free(read_err_line_error);
                         }
+			// When the subprocess finished and output buffer is
+			// clean, stop polling thread.
+			if (!emitter->running) {
+				break;
+			}
                         continue;
                 }
 
@@ -60,6 +73,7 @@ static gpointer poller_function(gpointer user_data)
 			gtk_text_buffer_insert(
 				emitter->buffer, &end, out_line, -1);
 			gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
+			printf("%s\n", out_line);
 			g_free(out_line);
 			out_line = NULL;
 		}
@@ -70,6 +84,7 @@ static gpointer poller_function(gpointer user_data)
 			gtk_text_buffer_insert(
 				emitter->buffer, &end, err_line, -1);
 			gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
+			printf("%s\n", err_line);
 			g_free(err_line);
 			err_line = NULL;
 		}
@@ -83,14 +98,18 @@ static void subprocess_finished(GObject *object,
                         	gpointer user_data)
 {
 	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
-	emitter->polling = false;
+	emitter->running = false;
 
 	printf("subprocess finished\n");
 }
 
 static void converter_emitter_init(ConverterEmitter *emitter)
 {
-        emitter->error = NULL;
+	/* lock the poller thread before we initialize the window */
+	emitter->buffer = NULL;
+	emitter->initialized = false;
+
+	emitter->error = NULL;
         emitter->cli = g_subprocess_new(
                 G_SUBPROCESS_FLAGS_STDIN_PIPE |
                 G_SUBPROCESS_FLAGS_STDOUT_PIPE |
@@ -120,7 +139,7 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 g_subprocess_get_stderr_pipe(emitter->cli)
         );
 
-        emitter->polling = TRUE;
+        emitter->running = TRUE;
         emitter->poller = g_thread_try_new(
                 "poller",
                 poller_function,
@@ -131,8 +150,6 @@ static void converter_emitter_init(ConverterEmitter *emitter)
         if (emitter->poller == NULL) {
                 return;
         }
-
-
 }
 
 static void converter_emitter_finalize(GObject *object)
@@ -206,5 +223,7 @@ void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent)
 		emitter
 	);
 
+	// Window initialized, unlock the poller thread
+	emitter->initialized = TRUE;
 	gtk_window_present(GTK_WINDOW(window));
 }
