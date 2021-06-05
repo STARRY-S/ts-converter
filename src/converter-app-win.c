@@ -39,7 +39,7 @@ static GtkTreeModel *init_model()
         );
 
         struct List *list = converter_filelist_get_list();
-        if (list == NULL || list->begin == NULL) {
+        if (list == NULL || list->size == 0) {
                 gtk_list_store_append(store, &iter);
                 gtk_list_store_set(
                         store, &iter,

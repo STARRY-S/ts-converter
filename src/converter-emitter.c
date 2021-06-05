@@ -39,6 +39,13 @@ static gpointer poller_function(gpointer user_data)
                 // 还没想好咋处理接受到的消息，先丢到stdout再说
                 printf("%s\n", line);
                 g_free(line);
+
+		line = g_data_input_stream_read_line(
+                        emitter->cli_out,
+                        NULL,
+                        NULL,
+                        &read_line_error
+                );
         }
 
         return NULL;
@@ -65,6 +72,7 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 // "pkexec",
 		"ffmpeg",
                 "-version",
+		"&>1",
                 NULL
         );
 

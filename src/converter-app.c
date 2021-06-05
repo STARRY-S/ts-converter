@@ -59,16 +59,17 @@ ConverterApp *converter_app_new(void)
         );
 }
 
-static void on_cancel_response(GtkDialog *dialog, int response)
+static void on_cancel_response(GtkNativeDialog *dialog, int response)
 {
         if (response != GTK_RESPONSE_CANCEL) {
                 return;
         }
 
-        gtk_window_destroy(GTK_WINDOW(dialog));
+        g_object_unref(dialog);
 }
 
-static void on_open_response(GtkDialog *dialog, int response, gpointer window)
+static void on_open_response(GtkNativeDialog *dialog,
+        int response, gpointer window)
 {
         if (response != GTK_RESPONSE_ACCEPT) {
                 return;
@@ -94,7 +95,7 @@ static void on_open_response(GtkDialog *dialog, int response, gpointer window)
 #endif
 
         converter_app_window_update_list(window);
-        gtk_window_destroy(GTK_WINDOW(dialog));
+        g_object_unref(dialog);
 }
 
 static void clear_list_activated(GSimpleAction *action,
@@ -111,50 +112,52 @@ static void open_file_activated(GSimpleAction *action,
                                 GVariant      *parameter,
                                 gpointer      app)
 {
-        /* file picker */
         ConverterAppWindow *window = CONVERTER_APP(app)->window;
-
         GtkFileChooserAction open_action = GTK_FILE_CHOOSER_ACTION_OPEN;
-        GtkWidget *dialog = gtk_file_chooser_dialog_new(
+        GtkFileChooserNative *native;
+
+        native = gtk_file_chooser_native_new(
                 "Open File",
                 GTK_WINDOW(window),
                 open_action,
-                "_Cancel",
-                GTK_RESPONSE_CANCEL,
                 "_Open",
-                GTK_RESPONSE_ACCEPT,
-                NULL
+                "_Cancel"
+        );
+        g_object_set_data_full(
+                G_OBJECT(native),
+                "app",
+                g_object_ref(app),
+                g_object_unref
         );
 
         g_signal_connect(
-                dialog,
-                "response",
-                G_CALLBACK(on_open_response),
-                window
-        );
-
-        g_signal_connect(
-                dialog,
+                native,
                 "response",
                 G_CALLBACK(on_cancel_response),
                 NULL
         );
 
+        g_signal_connect(
+                native,
+                "response",
+                G_CALLBACK(on_open_response),
+                window
+        );
+
         gtk_file_chooser_set_select_multiple(
-                GTK_FILE_CHOOSER(dialog),
+                GTK_FILE_CHOOSER(native),
                 TRUE
         );
 
-        gtk_widget_show(dialog);
+        gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
 }
 
-static void on_save_response(GtkDialog *dialog, int response)
+static void on_save_response(GtkFileChooserNative *dialog, int response)
 {
         GFile *file = NULL;
         if (response == GTK_RESPONSE_ACCEPT)
         {
                 GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
-
                 file = gtk_file_chooser_get_file(chooser);
                 gtk_window_destroy(GTK_WINDOW (dialog));
         } else {
@@ -201,39 +204,41 @@ static void merge_activated(GSimpleAction *action,
 {
         /* file picker */
         ConverterAppWindow *window = CONVERTER_APP(app)->window;
-
         GtkFileChooserAction save_action = GTK_FILE_CHOOSER_ACTION_SAVE;
-        GtkWidget *dialog = gtk_file_chooser_dialog_new(
+        GtkFileChooserNative *native = gtk_file_chooser_native_new(
                 "Merge Video",
                 GTK_WINDOW(window),
                 save_action,
-                "_Cancel",
-                GTK_RESPONSE_CANCEL,
                 "_Save",
-                GTK_RESPONSE_ACCEPT,
-                NULL
+                "_Cancel"
+        );
+        g_object_set_data_full(
+                G_OBJECT(native),
+                "app",
+                g_object_ref(app),
+                g_object_unref
         );
 
         g_signal_connect(
-                dialog,
-                "response",
-                G_CALLBACK(on_save_response),
-                NULL
-        );
-
-        g_signal_connect(
-                dialog,
+                native,
                 "response",
                 G_CALLBACK(on_cancel_response),
                 NULL
         );
 
+        g_signal_connect(
+                native,
+                "response",
+                G_CALLBACK(on_save_response),
+                window
+        );
+
         gtk_file_chooser_set_current_name(
-                GTK_FILE_CHOOSER(dialog),
+                GTK_FILE_CHOOSER(native),
                 "output.mp4"
         );
 
-        gtk_widget_show(dialog);
+        gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
 }
 
 static void quit_activated(GSimpleAction *action,
