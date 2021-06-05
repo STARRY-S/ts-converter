@@ -5,11 +5,15 @@
 
 struct _ConverterEmitter {
 	GObject parent_instance;
+
 	GSubprocess *cli;
 	GDataInputStream *cli_out;
 	GThread *poller;
 	gboolean polling;
 	GError *error;
+
+	GtkWindow *window;
+	GtkTextBuffer *buffer;
 };
 
 G_DEFINE_TYPE(ConverterEmitter, converter_emitter, G_TYPE_OBJECT);
@@ -36,16 +40,16 @@ static gpointer poller_function(gpointer user_data)
                         continue;
                 }
 
-                // 还没想好咋处理接受到的消息，先丢到stdout再说
-                printf("%s\n", line);
-                g_free(line);
 
-		line = g_data_input_stream_read_line(
-                        emitter->cli_out,
-                        NULL,
-                        NULL,
-                        &read_line_error
-                );
+		GtkTextIter end;
+		gtk_text_buffer_get_iter_at_offset(emitter->buffer, &end, -1);
+		gtk_text_buffer_insert(emitter->buffer, &end, line, -1);
+		gtk_text_buffer_get_iter_at_offset(emitter->buffer, &end, -1);
+		gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
+		// gtk_text_buffer_set_text(buffer, line, -1);
+
+		printf("%s\n", line);
+		g_free(line);
         }
 
         return NULL;
@@ -102,24 +106,78 @@ static void converter_emitter_init(ConverterEmitter *emitter)
         if (emitter->poller == NULL) {
                 return;
         }
+
+	/* init emitter window */
+	emitter->window = GTK_WINDOW(gtk_window_new());
+	if (emitter->window == NULL) {
+		return;
+	}
+	gtk_window_set_title(GTK_WINDOW(emitter->window), "Merge Videos");
+        gtk_window_set_default_size(GTK_WINDOW(emitter->window), 800, 600);
+        gtk_window_set_transient_for(emitter->window, NULL);
 }
 
-// static void converter_emitter_finalize(GObject *object)
-// {
-//         ConverterEmitter *emitter = CONVERTER_EMITTER_TYPE(user_data);
-//
-//         G_OBJECT_CLASS(converter_emitter_parent_class)->finalize(object);
-// }
+static void converter_emitter_finalize(GObject *object)
+{
+        // ConverterEmitter *emitter = CONVERTER_EMITTER_TYPE(object);
+
+        G_OBJECT_CLASS(converter_emitter_parent_class)->finalize(object);
+	printf("emitter finalized!\n");
+	fflush(stdout);
+}
 
 static void converter_emitter_class_init(ConverterEmitterClass *emitter)
 {
-        printf("merge class init\n");
-        // GObjectClass *object_class = G_OBJECT_CLASS(emitter);
-        // object_class->finalize = converter_emitter_finalize;
+        GObjectClass *object_class = G_OBJECT_CLASS(emitter);
+        object_class->finalize = converter_emitter_finalize;
+}
+
+static void converter_emitter_win_close(GtkWidget *object,
+               gpointer   user_data)
+{
+	printf("Window Closed\n");
+	g_object_unref(user_data);
 }
 
 ConverterEmitter *converter_emitter_new(void)
 {
         ConverterEmitter *emitter = g_object_new(CONVERTER_EMITTER_TYPE, NULL);
         return emitter;
+}
+
+void converter_emitter_win_init(ConverterEmitter* emitter)
+{
+	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+        gtk_widget_set_margin_start(vbox, 8);
+        gtk_widget_set_margin_end(vbox, 8);
+        gtk_widget_set_margin_top(vbox, 8);
+        gtk_widget_set_margin_bottom(vbox, 8);
+	gtk_window_set_child(GTK_WINDOW(emitter->window), vbox);
+
+	GtkWidget *text_view = gtk_text_view_new();
+        GtkWidget *text_scroll = gtk_scrolled_window_new();
+        gtk_widget_set_hexpand(text_view, TRUE);
+        gtk_widget_set_vexpand(text_view, TRUE);
+        gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
+        gtk_text_view_set_cursor_visible(
+		GTK_TEXT_VIEW(text_view),
+		FALSE
+	);
+        gtk_scrolled_window_set_child(
+                GTK_SCROLLED_WINDOW(text_scroll),
+                text_view
+        );
+        gtk_box_append(GTK_BOX(vbox), text_scroll);
+	emitter->buffer = gtk_text_view_get_buffer(
+		GTK_TEXT_VIEW(text_view)
+	);
+        // gtk_text_buffer_set_text(buffer, "Test Word.", 10);
+	g_signal_connect(
+		G_OBJECT(emitter->window),
+		"destroy",
+      		G_CALLBACK(converter_emitter_win_close),
+		emitter
+	);
+
+	gtk_window_present(GTK_WINDOW(emitter->window));
 }

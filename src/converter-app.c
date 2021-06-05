@@ -165,38 +165,9 @@ static void on_save_response(GtkFileChooserNative *dialog, int response)
                 return;
         }
 
-        GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-        gtk_widget_set_margin_start(vbox, 8);
-        gtk_widget_set_margin_end(vbox, 8);
-        gtk_widget_set_margin_top(vbox, 8);
-        gtk_widget_set_margin_bottom(vbox, 8);
-
-        GtkWidget *text_scroll = gtk_scrolled_window_new();
-        GtkWidget *text_view = gtk_text_view_new();
-        gtk_widget_set_hexpand(text_view, TRUE);
-        gtk_widget_set_vexpand(text_view, TRUE);
-        gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-        gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(text_view), FALSE);
-        gtk_scrolled_window_set_child(
-                GTK_SCROLLED_WINDOW(text_scroll),
-                text_view
-        );
-        gtk_box_append(GTK_BOX(vbox), text_scroll);
-
-        GtkWindow *mwindow;
-        mwindow = GTK_WINDOW(gtk_window_new());
-        gtk_window_set_title(GTK_WINDOW(mwindow), "Merge Videos");
-        gtk_window_set_child(GTK_WINDOW(mwindow), vbox);
-        gtk_window_set_default_size(GTK_WINDOW(mwindow), 800, 600);
-        gtk_window_set_transient_for(mwindow, NULL);
-        gtk_window_present(GTK_WINDOW(mwindow));
-
-        GtkTextBuffer *buffer;
-        char *path = g_file_get_path(file);
-        buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-        gtk_text_buffer_set_text(buffer, path, strlen(path));
-
         ConverterEmitter *emitter = converter_emitter_new();
+        converter_emitter_win_init(emitter);
+        // g_object_unref(emitter);
 }
 
 static void merge_activated(GSimpleAction *action,

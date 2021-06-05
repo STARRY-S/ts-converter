@@ -14,5 +14,6 @@ G_DECLARE_FINAL_TYPE(
 )
 
 ConverterEmitter *converter_emitter_new(void);
+void converter_emitter_win_init(ConverterEmitter* emitter);
 
 #endif
