@@ -15,5 +15,4 @@ G_DECLARE_FINAL_TYPE(
 
 ConverterEmitter *converter_emitter_new(void);
 
-
 #endif

@@ -159,9 +159,10 @@ static void on_save_response(GtkFileChooserNative *dialog, int response)
         {
                 GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
                 file = gtk_file_chooser_get_file(chooser);
-                gtk_window_destroy(GTK_WINDOW (dialog));
+                g_object_unref(dialog);
         } else {
-                gtk_window_destroy(GTK_WINDOW (dialog));
+                g_object_unref(dialog);
+                return;
         }
 
         GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
@@ -202,7 +203,6 @@ static void merge_activated(GSimpleAction *action,
                             GVariant      *parameter,
                             gpointer      app)
 {
-        /* file picker */
         ConverterAppWindow *window = CONVERTER_APP(app)->window;
         GtkFileChooserAction save_action = GTK_FILE_CHOOSER_ACTION_SAVE;
         GtkFileChooserNative *native = gtk_file_chooser_native_new(
@@ -217,13 +217,6 @@ static void merge_activated(GSimpleAction *action,
                 "app",
                 g_object_ref(app),
                 g_object_unref
-        );
-
-        g_signal_connect(
-                native,
-                "response",
-                G_CALLBACK(on_cancel_response),
-                NULL
         );
 
         g_signal_connect(
