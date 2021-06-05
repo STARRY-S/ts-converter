@@ -11,13 +11,14 @@ struct _ConverterEmitter {
 	GObject parent_instance;
 
 	GSubprocess *cli;
-	GDataInputStream *cli_out;
-	GDataInputStream *cli_err;
+	GDataInputStream *cliout;
+	GDataInputStream *clierr;
 	GPtrArray *line_array;
 	GThread *poller;
 	gboolean running;
 	GError *error;
 
+	GtkWindow *window;
 	GtkTextBuffer *buffer;
 };
 
@@ -28,56 +29,65 @@ enum {
 	N_SIGNALS
 };
 
+static guint obj_signals[N_SIGNALS] = { 0 };
+
+static void idle_destroy_function(gpointer user_data)
+{
+	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
+	g_object_unref(emitter);
+}
+
 static gboolean idle_function(gpointer user_data)
 {
 	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
-	char *cliout = emitter->cli_out_line;
-	char *clierr = emitter->cli_err_line;
+	gchar *log_text = g_strjoinv(
+		"\n",
+		(gchar**) emitter->line_array->pdata
+	);
+	// remove the lines we inserted in the log.
+	g_ptr_array_remove_range(
+		emitter->line_array,
+		0,
+		emitter->line_array->len - 1
+	);
 
 	GtkTextIter end;
 	gtk_text_buffer_get_iter_at_offset(emitter->buffer, &end, -1);
-	if (cliout != NULL) {
-		gtk_text_buffer_insert(
-			emitter->buffer, &end, cliout, -1);
-		gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
-		g_free(cliout);
-	}
+	gtk_text_buffer_insert(
+		emitter->buffer, &end, log_text, -1
+	);
+	// gtk_text_buffer_set_text(emitter->buffer, label_text, -1);
+	g_free(log_text);
 
-	if (clierr != NULL) {
-		gtk_text_buffer_insert(
-			emitter->buffer, &end, "[ERROR] ", -1);
-		gtk_text_buffer_insert(
-			emitter->buffer, &end, clierr, -1);
-		gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
-		g_free(clierr);
-	}
+	return FALSE;
 }
 
-// See https://stackoverflow.com/questions/37780799/
-// gtk-3-textview-application-crashes
-// You can not access any part of GTK+ in a seperate process
 static gpointer poller_function(gpointer user_data)
 {
         ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
+	while (emitter->buffer == NULL) {
+		continue;
+	}
 
         while (TRUE) {
 		GError *read_out_line_error = NULL;
                 GError *read_err_line_error = NULL;
-                emitter->cli_out_line = g_data_input_stream_read_line(
-                        emitter->cli_out,
+
+                char *cliout = g_data_input_stream_read_line(
+                        emitter->cliout,
                         NULL,
                         NULL,
                         &read_out_line_error
                 );
 
-		emitter->cli_err_line = g_data_input_stream_read_line(
-			emitter->cli_err,
+		char *clierr = g_data_input_stream_read_line(
+			emitter->clierr,
 			NULL,
 			NULL,
 			&read_err_line_error
 		);
 
-                if (!emitter->cli_out_line && !emitter->cli_err_line) {
+                if (cliout == NULL && clierr == NULL) {
                         if (read_out_line_error != NULL) {
                                 fprintf(stderr, "Read line error: %s\n",
                                                 read_out_line_error->message);
@@ -97,14 +107,42 @@ static gpointer poller_function(gpointer user_data)
                         continue;
                 }
 
-		// g_idle_add();
-		g_timeout_add_full(
-			G_PRIORITY_DEFAULT,
-			0,
-			idle_function,
-			emitter,
-			NULL
-		);
+		if (cliout != NULL) {
+			printf("%s\n", cliout);
+			g_ptr_array_insert(
+				emitter->line_array,
+				emitter->line_array->len - 1,
+				cliout
+			);
+		}
+
+		if (clierr != NULL) {
+			printf("%s\n", clierr);
+			g_ptr_array_insert(
+				emitter->line_array,
+				emitter->line_array->len - 1,
+				clierr
+			);
+		}
+
+		// Do not access any part of GTK+ in a seperate process
+		if (cliout != NULL || clierr != NULL) {
+			if (emitter->line_array->len - 1 > MAX_LINE) {
+				g_ptr_array_remove_range(
+					emitter->line_array,
+					0,
+					emitter->line_array->len - 1 - MAX_LINE
+				);
+			}
+
+			g_timeout_add_full(
+				G_PRIORITY_DEFAULT,
+				0,
+				idle_function,
+				g_object_ref(emitter),
+				idle_destroy_function
+			);
+		}
         }
 
         return NULL;
@@ -122,14 +160,15 @@ static void subprocess_finished(GObject *object,
 
 static void converter_emitter_init(ConverterEmitter *emitter)
 {
-	/* lock the poller thread before we initialize the window */
+	emitter->window = NULL;
 	emitter->buffer = NULL;
-	// 好麻烦啊
+
 	// g_strjoinv() accepts a NULL terminated char pointer array,
 	// so we use a GPtrArray to store char pointer.
 	// Append a NULL first and always insert elements before it.
 	// So we can directly use the GPtrArray for g_strjoinv().
 	emitter->line_array = g_ptr_array_new_full(MAX_LINE + 1, g_free);
+	g_ptr_array_add(emitter->line_array, NULL);
 
 	emitter->error = NULL;
         emitter->cli = g_subprocess_new(
@@ -155,25 +194,36 @@ static void converter_emitter_init(ConverterEmitter *emitter)
 		emitter				// user_data
 	);
 
-        emitter->cli_out = g_data_input_stream_new(
+        emitter->cliout = g_data_input_stream_new(
                 g_subprocess_get_stdout_pipe(emitter->cli)
         );
 
-	emitter->cli_err = g_data_input_stream_new(
+	emitter->clierr = g_data_input_stream_new(
                 g_subprocess_get_stderr_pipe(emitter->cli)
         );
 
         emitter->running = TRUE;
+        emitter->poller = g_thread_try_new(
+                "poller",
+                poller_function,
+                emitter,
+                &emitter->error
+        );
 
+        if (emitter->poller == NULL) {
+                return;
+        }
 }
 
 static void converter_emitter_finalize(GObject *object)
 {
-        // ConverterEmitter *emitter = CONVERTER_EMITTER_TYPE(object);
+        ConverterEmitter *emitter = CONVERTER_EMITTER(object);
 
-        G_OBJECT_CLASS(converter_emitter_parent_class)->finalize(object);
-	printf("emitter finalized!\n");
-	fflush(stdout);
+	if (emitter->line_array != NULL) {
+		g_ptr_array_free(emitter->line_array, TRUE);
+		emitter->line_array = NULL;
+	}
+	G_OBJECT_CLASS(converter_emitter_parent_class)->finalize(object);
 }
 
 static void converter_emitter_class_init(ConverterEmitterClass *emitter)
@@ -183,7 +233,7 @@ static void converter_emitter_class_init(ConverterEmitterClass *emitter)
 
 	obj_signals[CONVERTER_EMITTER_UPDATE_TEXT_VIEW] = g_signal_new(
 		"update-textview",
-		CONVERTER_EMITTER,
+		CONVERTER_EMITTER_TYPE,
 		G_SIGNAL_RUN_LAST,
 		0, NULL, NULL,
 		g_cclosure_marshal_VOID__STRING,
@@ -204,17 +254,7 @@ ConverterEmitter *converter_emitter_new(void)
 
 void converter_emitter_poller_init(ConverterEmitter *emitter)
 {
-	emitter->poller = NULL;
-        emitter->poller = g_thread_try_new(
-                "poller",
-                poller_function,
-                emitter,
-                &emitter->error
-        );
 
-        if (emitter->poller == NULL) {
-                return;
-        }
 }
 
 void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent)
@@ -224,6 +264,7 @@ void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent)
 	if (window == NULL) {
 		return;
 	}
+	emitter->window = window;
 	gtk_window_set_title(GTK_WINDOW(window), "Merge Videos");
         gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 	gtk_window_set_transient_for(window, parent);

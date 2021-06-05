@@ -173,10 +173,6 @@ static void on_save_response(GtkFileChooserNative *dialog,
         /* emitter will finalize itself when merge window close */
         app->emitter = converter_emitter_new();
         converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
-        usleep(20);
-        converter_emitter_poller_init(app->emitter);
-
-        // struct List *list = converter_filelist_get_list();
 }
 
 static void merge_activated(GSimpleAction *action,
