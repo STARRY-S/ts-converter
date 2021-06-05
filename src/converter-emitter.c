@@ -1,12 +1,10 @@
 #include <gtk/gtk.h>
 
 #include "converter-emitter.h"
-/* refer: https://github.com/AlynxZhou/showmethekey */
 
-#ifndef MAX_LINE
 #define MAX_LINE 128
-#endif
 
+/* refer: https://github.com/AlynxZhou/showmethekey */
 struct _ConverterEmitter {
 	GObject parent_instance;
 
@@ -31,12 +29,6 @@ enum {
 
 static guint obj_signals[N_SIGNALS] = { 0 };
 
-static void idle_destroy_function(gpointer user_data)
-{
-	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
-	g_object_unref(emitter);
-}
-
 static gboolean idle_function(gpointer user_data)
 {
 	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
@@ -44,7 +36,7 @@ static gboolean idle_function(gpointer user_data)
 		"\n",
 		(gchar**) emitter->line_array->pdata
 	);
-	// remove the lines we inserted in the log.
+	// remove the lines which is inserted in the log.
 	g_ptr_array_remove_range(
 		emitter->line_array,
 		0,
@@ -56,7 +48,6 @@ static gboolean idle_function(gpointer user_data)
 	gtk_text_buffer_insert(
 		emitter->buffer, &end, log_text, -1
 	);
-	// gtk_text_buffer_set_text(emitter->buffer, label_text, -1);
 	g_free(log_text);
 
 	return FALSE;
@@ -127,20 +118,20 @@ static gpointer poller_function(gpointer user_data)
 
 		// Do not access any part of GTK+ in a seperate process
 		if (cliout != NULL || clierr != NULL) {
-			if (emitter->line_array->len - 1 > MAX_LINE) {
-				g_ptr_array_remove_range(
-					emitter->line_array,
-					0,
-					emitter->line_array->len - 1 - MAX_LINE
-				);
-			}
+			// if (emitter->line_array->len - 1 > MAX_LINE) {
+			// 	g_ptr_array_remove_range(
+			// 		emitter->line_array,
+			// 		0,
+			// 		emitter->line_array->len - 1 - MAX_LINE
+			// 	);
+			// }
 
 			g_timeout_add_full(
 				G_PRIORITY_DEFAULT,
 				0,
 				idle_function,
 				g_object_ref(emitter),
-				idle_destroy_function
+				NULL
 			);
 		}
         }
@@ -171,13 +162,15 @@ static void converter_emitter_init(ConverterEmitter *emitter)
 	g_ptr_array_add(emitter->line_array, NULL);
 
 	emitter->error = NULL;
+	// refer: https://trac.ffmpeg.org/wiki/Concatenate
         emitter->cli = g_subprocess_new(
                 G_SUBPROCESS_FLAGS_STDIN_PIPE |
                 G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
 		"ffmpeg",
-                "-version",
+                "-f", "concat", "-safe", "0", "-i", "temp.txt", "-c", "copy",
+		"output.mp4",
                 NULL
         );
 
@@ -188,7 +181,8 @@ static void converter_emitter_init(ConverterEmitter *emitter)
         }
 
         // spawn a subprocess, execute ffmpeg command.
-        g_subprocess_wait_async(emitter->cli,
+        g_subprocess_wait_async(
+		emitter->cli,
 		NULL,				// cancellable
 		subprocess_finished,		// callback
 		emitter				// user_data

@@ -170,6 +170,19 @@ static void on_save_response(GtkFileChooserNative *dialog,
                 return;
         }
 
+        struct List *list = converter_filelist_get_list();
+        if (list == NULL || list->size == 0) {
+                return;
+        }
+        FILE *fp = fopen("temp.txt", "w");
+        if (fp == NULL) {
+                return;
+        }
+        for (struct video *p = list->begin->next; p != NULL; p = p->next)
+        {
+                fprintf(fp, "file '%s'\n", p->path);
+        }
+        fclose(fp);
         /* emitter will finalize itself when merge window close */
         app->emitter = converter_emitter_new();
         converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
