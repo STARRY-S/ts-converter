@@ -165,9 +165,11 @@ static void on_save_response(GtkFileChooserNative *dialog, int response)
                 return;
         }
 
+        /* emitter will finalize itself when merge window close */
         ConverterEmitter *emitter = converter_emitter_new();
         converter_emitter_win_init(emitter);
-        // g_object_unref(emitter);
+
+        struct List *list = converter_filelist_get_list();
 }
 
 static void merge_activated(GSimpleAction *action,

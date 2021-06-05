@@ -8,6 +8,7 @@ struct _ConverterEmitter {
 
 	GSubprocess *cli;
 	GDataInputStream *cli_out;
+	GDataInputStream *cli_err;
 	GThread *poller;
 	gboolean polling;
 	GError *error;
@@ -22,34 +23,55 @@ static gpointer poller_function(gpointer user_data)
 {
         ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
         while (emitter->polling) {
-                // printf("pooling.\n");
-                GError *read_line_error = NULL;
-                char *line = g_data_input_stream_read_line(
+		GError *read_out_line_error = NULL;
+                GError *read_err_line_error = NULL;
+                char *out_line = g_data_input_stream_read_line(
                         emitter->cli_out,
                         NULL,
                         NULL,
-                        &read_line_error
+                        &read_out_line_error
                 );
 
-                if (line == NULL) {
-                        if (read_line_error != NULL) {
+		char *err_line = g_data_input_stream_read_line(
+			emitter->cli_err,
+			NULL,
+			NULL,
+			&read_err_line_error
+		);
+
+
+                if (out_line == NULL && err_line == NULL) {
+                        if (read_out_line_error != NULL) {
                                 fprintf(stderr, "Read line error: %s\n",
-                                                read_line_error->message);
-                                g_error_free(read_line_error);
+                                                read_out_line_error->message);
+                                g_error_free(read_out_line_error);
+                        }
+
+			if (read_err_line_error != NULL) {
+                                fprintf(stderr, "Read line error: %s\n",
+                                                read_err_line_error->message);
+                                g_error_free(read_err_line_error);
                         }
                         continue;
                 }
 
-
 		GtkTextIter end;
 		gtk_text_buffer_get_iter_at_offset(emitter->buffer, &end, -1);
-		gtk_text_buffer_insert(emitter->buffer, &end, line, -1);
-		gtk_text_buffer_get_iter_at_offset(emitter->buffer, &end, -1);
-		gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
-		// gtk_text_buffer_set_text(buffer, line, -1);
+		if (out_line != NULL) {
+			gtk_text_buffer_insert(
+				emitter->buffer, &end, out_line, -1);
+			gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
+			g_free(out_line);
+			out_line = NULL;
+		}
 
-		printf("%s\n", line);
-		g_free(line);
+		if (err_line != NULL) {
+			gtk_text_buffer_insert(
+				emitter->buffer, &end, err_line, -1);
+			gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
+			g_free(err_line);
+			err_line = NULL;
+		}
         }
 
         return NULL;
@@ -62,7 +84,7 @@ static void subprocess_finished(GObject *object,
 	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
 	emitter->polling = false;
 
-	printf("Finished\n");
+	printf("subprocess finished\n");
 }
 
 static void converter_emitter_init(ConverterEmitter *emitter)
@@ -73,10 +95,8 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 G_SUBPROCESS_FLAGS_STDOUT_PIPE |
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
-                // "pkexec",
 		"ffmpeg",
-                "-version",
-		"&>1",
+                "-aaa",
                 NULL
         );
 
@@ -93,6 +113,10 @@ static void converter_emitter_init(ConverterEmitter *emitter)
 
         emitter->cli_out = g_data_input_stream_new(
                 g_subprocess_get_stdout_pipe(emitter->cli)
+        );
+
+	emitter->cli_err = g_data_input_stream_new(
+                g_subprocess_get_stderr_pipe(emitter->cli)
         );
 
         emitter->polling = TRUE;
@@ -132,11 +156,9 @@ static void converter_emitter_class_init(ConverterEmitterClass *emitter)
         object_class->finalize = converter_emitter_finalize;
 }
 
-static void converter_emitter_win_close(GtkWidget *object,
-               gpointer   user_data)
+static void converter_emitter_win_close(GtkWidget *object, gpointer emitter)
 {
-	printf("Window Closed\n");
-	g_object_unref(user_data);
+	g_object_unref(emitter);
 }
 
 ConverterEmitter *converter_emitter_new(void)
@@ -171,7 +193,8 @@ void converter_emitter_win_init(ConverterEmitter* emitter)
 	emitter->buffer = gtk_text_view_get_buffer(
 		GTK_TEXT_VIEW(text_view)
 	);
-        // gtk_text_buffer_set_text(buffer, "Test Word.", 10);
+
+	/* release emitter when window destroy */
 	g_signal_connect(
 		G_OBJECT(emitter->window),
 		"destroy",
