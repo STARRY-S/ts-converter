@@ -10,6 +10,7 @@ struct _ConverterApp
 {
         GtkApplication parent;
         ConverterAppWindow *window;
+        ConverterEmitter *emitter;
 };
 
 G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
@@ -17,6 +18,7 @@ G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
 static void converter_app_init(ConverterApp *app)
 {
         init_file_list();
+        app->emitter = NULL;
 }
 
 static void converter_app_activate(GApplication *app)
@@ -152,24 +154,26 @@ static void open_file_activated(GSimpleAction *action,
         gtk_native_dialog_show(GTK_NATIVE_DIALOG(native));
 }
 
-static void on_save_response(GtkFileChooserNative *dialog, int response)
+static void on_save_response(GtkFileChooserNative *dialog,
+                int response, gpointer data)
 {
+        ConverterApp *app = CONVERTER_APP(data);
         GFile *file = NULL;
         if (response == GTK_RESPONSE_ACCEPT)
         {
                 GtkFileChooser *chooser = GTK_FILE_CHOOSER(dialog);
                 file = gtk_file_chooser_get_file(chooser);
-                g_object_unref(dialog);
         } else {
                 g_object_unref(dialog);
                 return;
         }
 
         /* emitter will finalize itself when merge window close */
-        ConverterEmitter *emitter = converter_emitter_new();
-        converter_emitter_win_init(emitter);
+        app->emitter = converter_emitter_new();
+        converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
 
-        struct List *list = converter_filelist_get_list();
+        // struct List *list = converter_filelist_get_list();
+        g_object_unref(dialog);
 }
 
 static void merge_activated(GSimpleAction *action,
@@ -185,18 +189,18 @@ static void merge_activated(GSimpleAction *action,
                 "_Save",
                 "_Cancel"
         );
-        g_object_set_data_full(
-                G_OBJECT(native),
-                "app",
-                g_object_ref(app),
-                g_object_unref
-        );
+        // g_object_set_data_full(
+        //         G_OBJECT(native),
+        //         "app",
+        //         g_object_ref(app),
+        //         g_object_unref
+        // );
 
         g_signal_connect(
                 native,
                 "response",
                 G_CALLBACK(on_save_response),
-                window
+                app
         );
 
         gtk_file_chooser_set_current_name(

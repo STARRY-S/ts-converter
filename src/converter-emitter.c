@@ -13,7 +13,6 @@ struct _ConverterEmitter {
 	gboolean polling;
 	GError *error;
 
-	GtkWindow *window;
 	GtkTextBuffer *buffer;
 };
 
@@ -66,6 +65,8 @@ static gpointer poller_function(gpointer user_data)
 		}
 
 		if (err_line != NULL) {
+			gtk_text_buffer_insert(
+				emitter->buffer, &end, "[ERROR] ", -1);
 			gtk_text_buffer_insert(
 				emitter->buffer, &end, err_line, -1);
 			gtk_text_buffer_insert(emitter->buffer, &end, "\n", -1);
@@ -131,14 +132,7 @@ static void converter_emitter_init(ConverterEmitter *emitter)
                 return;
         }
 
-	/* init emitter window */
-	emitter->window = GTK_WINDOW(gtk_window_new());
-	if (emitter->window == NULL) {
-		return;
-	}
-	gtk_window_set_title(GTK_WINDOW(emitter->window), "Merge Videos");
-        gtk_window_set_default_size(GTK_WINDOW(emitter->window), 800, 600);
-        gtk_window_set_transient_for(emitter->window, NULL);
+
 }
 
 static void converter_emitter_finalize(GObject *object)
@@ -167,14 +161,23 @@ ConverterEmitter *converter_emitter_new(void)
         return emitter;
 }
 
-void converter_emitter_win_init(ConverterEmitter* emitter)
+void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent)
 {
+	/* init emitter window */
+	GtkWindow *window = GTK_WINDOW(gtk_window_new());
+	if (window == NULL) {
+		return;
+	}
+	gtk_window_set_title(GTK_WINDOW(window), "Merge Videos");
+        gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
+	gtk_window_set_transient_for(window, parent);
+
 	GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
         gtk_widget_set_margin_start(vbox, 8);
         gtk_widget_set_margin_end(vbox, 8);
         gtk_widget_set_margin_top(vbox, 8);
         gtk_widget_set_margin_bottom(vbox, 8);
-	gtk_window_set_child(GTK_WINDOW(emitter->window), vbox);
+	gtk_window_set_child(GTK_WINDOW(window), vbox);
 
 	GtkWidget *text_view = gtk_text_view_new();
         GtkWidget *text_scroll = gtk_scrolled_window_new();
@@ -190,17 +193,18 @@ void converter_emitter_win_init(ConverterEmitter* emitter)
                 text_view
         );
         gtk_box_append(GTK_BOX(vbox), text_scroll);
+
 	emitter->buffer = gtk_text_view_get_buffer(
 		GTK_TEXT_VIEW(text_view)
 	);
 
 	/* release emitter when window destroy */
 	g_signal_connect(
-		G_OBJECT(emitter->window),
+		G_OBJECT(window),
 		"destroy",
       		G_CALLBACK(converter_emitter_win_close),
 		emitter
 	);
 
-	gtk_window_present(GTK_WINDOW(emitter->window));
+	gtk_window_present(GTK_WINDOW(window));
 }
