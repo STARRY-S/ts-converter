@@ -12,7 +12,6 @@ struct _ConverterApp
         GtkApplication parent;
         ConverterAppWindow *window;
         ConverterEmitter *emitter;
-        GError *error;
 };
 
 G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
@@ -89,6 +88,8 @@ static void on_open_response(GtkNativeDialog *dialog,
                 char *pathname = g_file_get_path(f);
                 // open_file(file);
                 insert_sort(pathname, basename, default_str_is_larger);
+                g_free(basename);
+                g_free(pathname);
         }
 
         calculate_file_id();
@@ -177,6 +178,7 @@ static void on_save_response(GtkFileChooserNative *dialog,
         }
         FILE *fp = fopen("temp.txt", "w");
         if (fp == NULL) {
+                fprintf(stderr, "failed to create a temp file.\n");
                 return;
         }
         for (struct video *p = list->begin->next; p != NULL; p = p->next)
@@ -187,10 +189,7 @@ static void on_save_response(GtkFileChooserNative *dialog,
         /* emitter will finalize itself when merge window close */
         app->emitter = converter_emitter_new();
         converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
-        converter_emitter_start_async(app->emitter, &app->error);
-        if (app->error != NULL) {
-                return;
-        }
+        converter_emitter_start_async(app->emitter, file);
 }
 
 static void merge_activated(GSimpleAction *action,
@@ -206,12 +205,6 @@ static void merge_activated(GSimpleAction *action,
                 "_Save",
                 "_Cancel"
         );
-        // g_object_set_data_full(
-        //         G_OBJECT(native),
-        //         "app",
-        //         g_object_ref(app),
-        //         g_object_unref
-        // );
 
         g_signal_connect(
                 native,
