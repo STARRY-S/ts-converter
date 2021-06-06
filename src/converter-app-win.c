@@ -93,6 +93,7 @@ static void converter_app_window_init(ConverterAppWindow *win)
                 gtk_builder_get_object(builder, "file-treeview")
         );
         gtk_tree_view_set_model(win->treeview, win->model);
+        gtk_tree_view_set_enable_search(win->treeview, FALSE);
         g_object_unref(win->model);
         win->model = NULL;
 }

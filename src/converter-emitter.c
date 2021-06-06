@@ -133,10 +133,6 @@ static void converter_emitter_init(ConverterEmitter *emitter)
 	emitter->cliout = NULL;
 	emitter->error  = NULL;
 
-	// g_strjoinv() accepts a NULL terminated char pointer array,
-	// so we use a GPtrArray to store char pointer.
-	// Append a NULL first and always insert elements before it.
-	// So we can directly use the GPtrArray for g_strjoinv().
 	emitter->line_array = g_ptr_array_new_with_free_func(g_free);
 	g_ptr_array_add(emitter->line_array, NULL);
 }
