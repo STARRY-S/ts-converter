@@ -21,6 +21,8 @@ static struct List List = {
         .size = 0
 };
 
+static const char *unknow_format = "UNKNOW";
+
 int insert_at(const char *path,const char *name, SV* here);
 bool isNumber(char cc);
 bool isAlphabet(char cc);
@@ -53,6 +55,9 @@ int release_file_list()
         for (SV *p = List.begin; p != NULL; p = p->next)
         {
                 SV* pp = p;
+                free(pp->format);
+                free(pp->path);
+                free(pp->name);
                 free(pp);
         }
 
@@ -67,19 +72,27 @@ int insert_back(const char *const path, const char *const name)
         }
 
         SV* p = (SV*) malloc(sizeof(SV));
+        const char *format = strrchr(name, '.');
+        if (format == NULL) {
+                format = unknow_format;
+        }
+        int formatlen = strlen(format);
         int pathlen = strlen(path);
         int namelen = strlen(name);
         p->id = List.size + 1;
         p->path = (char*) malloc(pathlen * sizeof(char) + 1);
         p->name = (char*) malloc(namelen * sizeof(char) + 1);
-        if (p->path == NULL || p->name == NULL) {
+        p->format = (char*) malloc(formatlen * sizeof(char) + 1);
+        if (p->path == NULL || p->name == NULL || p->format == NULL) {
                 fprintf(stderr, "[MALLOC ERROR] Failed to insert back.\n");
                 free(p->path);
                 free(p->name);
+                free(p->format);
                 return -1;
         }
         strcpy(p->path, path);
         strcpy(p->name, name);
+        strcpy(p->format, format);
         p->next = NULL;
         p->prev = List.end;
 
@@ -99,19 +112,42 @@ int insert_head(const char *const path, const char *const name)
         }
 
         SV* p = (SV*) malloc(sizeof(SV));
+
+        const char *format = strrchr(name, '.');
+        if (format == NULL) {
+                format = unknow_format;
+        }
+        int formatlen = strlen(format);
         int pathlen = strlen(path);
         int namelen = strlen(name);
-        p->id = List.size;
+        p->id = List.size + 1;
         p->path = (char*) malloc(pathlen * sizeof(char) + 1);
         p->name = (char*) malloc(namelen * sizeof(char) + 1);
-        if (p->path == NULL || p->name == NULL) {
-                fprintf(stderr, "[MALLOC ERROR] Failed to insert head.\n");
+        p->format = (char*) malloc(formatlen * sizeof(char) + 1);
+        if (p->path == NULL || p->name == NULL || p->format == NULL) {
+                fprintf(stderr, "[MALLOC ERROR] Failed to insert back.\n");
                 free(p->path);
                 free(p->name);
+                free(p->format);
                 return -1;
         }
         strcpy(p->path, path);
         strcpy(p->name, name);
+        strcpy(p->format, format);
+
+        // int pathlen = strlen(path);
+        // int namelen = strlen(name);
+        // p->id = List.size;
+        // p->path = (char*) malloc(pathlen * sizeof(char) + 1);
+        // p->name = (char*) malloc(namelen * sizeof(char) + 1);
+        // if (p->path == NULL || p->name == NULL) {
+        //         fprintf(stderr, "[MALLOC ERROR] Failed to insert head.\n");
+        //         free(p->path);
+        //         free(p->name);
+        //         return -1;
+        // }
+        // strcpy(p->path, path);
+        // strcpy(p->name, name);
         if (List.begin->next == NULL) {
                 List.end = p;
         }
@@ -253,19 +289,42 @@ int insert_at(const char *path,const char *name, SV* here)
         }
 
         SV* p = (SV*) malloc(sizeof(SV));
+
+        const char *format = strrchr(name, '.');
+        if (format == NULL) {
+                format = unknow_format;
+        }
+        int formatlen = strlen(format);
         int pathlen = strlen(path);
         int namelen = strlen(name);
-        p->id = 0;              /* calculate after insert*/
+        p->id = List.size + 1;
         p->path = (char*) malloc(pathlen * sizeof(char) + 1);
         p->name = (char*) malloc(namelen * sizeof(char) + 1);
-        if (p->path == NULL || p->name == NULL) {
-                fprintf(stderr, "[MALLOC ERROR] Failed to insert head.\n");
+        p->format = (char*) malloc(formatlen * sizeof(char) + 1);
+        if (p->path == NULL || p->name == NULL || p->format == NULL) {
+                fprintf(stderr, "[MALLOC ERROR] Failed to insert back.\n");
                 free(p->path);
                 free(p->name);
+                free(p->format);
                 return -1;
         }
         strcpy(p->path, path);
         strcpy(p->name, name);
+        strcpy(p->format, format);
+
+        // int pathlen = strlen(path);
+        // int namelen = strlen(name);
+        // p->id = 0;              /* calculate after insert*/
+        // p->path = (char*) malloc(pathlen * sizeof(char) + 1);
+        // p->name = (char*) malloc(namelen * sizeof(char) + 1);
+        // if (p->path == NULL || p->name == NULL) {
+        //         fprintf(stderr, "[MALLOC ERROR] Failed to insert head.\n");
+        //         free(p->path);
+        //         free(p->name);
+        //         return -1;
+        // }
+        // strcpy(p->path, path);
+        // strcpy(p->name, name);
 
         here->prev->next = p;
         p->prev = here->prev;

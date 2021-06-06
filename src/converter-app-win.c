@@ -34,7 +34,7 @@ static GtkTreeModel *init_model()
         store = gtk_list_store_new(
                 NUM_COLUMNS,
                 G_TYPE_UINT,
-                G_TYPE_INT,
+                G_TYPE_STRING,
                 G_TYPE_STRING
         );
 
@@ -44,7 +44,7 @@ static GtkTreeModel *init_model()
                 gtk_list_store_set(
                         store, &iter,
                         COLUMN_NUMBER, 0,
-                        COLUMN_FORMAT, 0,
+                        COLUMN_FORMAT, "UNKNOW",
                         COLUMN_FILENAME, "Please import file first.",
                         -1
                 );
@@ -58,7 +58,7 @@ static GtkTreeModel *init_model()
                 gtk_list_store_set(
                         store, &iter,
                         COLUMN_NUMBER, p->id,
-                        COLUMN_FORMAT, p->id,
+                        COLUMN_FORMAT, p->format,
                         COLUMN_FILENAME, p->path,
                         -1
                 );
