@@ -47,6 +47,11 @@ static gboolean idle_function(gpointer user_data)
 	g_signal_emit_by_name(emitter, "update-log", log_text);
 	g_free(log_text);
 
+	g_ptr_array_remove_range(
+		emitter->line_array, 0,
+		emitter->line_array->len - 1
+	);
+
 	return FALSE;
 }
 
@@ -109,7 +114,7 @@ static void subprocess_finished(GObject *object,
 	g_ptr_array_insert(
 		emitter->line_array,
 		emitter->line_array->len - 1,
-		g_strdup("============================\nFinished.")
+		g_strdup("============================\nFinished.\n")
 	);
 	gchar *log_text = g_strjoinv(
 		"",
@@ -179,7 +184,12 @@ static void converter_emitter_update_log(ConverterEmitter *emitter,
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer(
 		GTK_TEXT_VIEW(emitter->text_view)
 	);
-	gtk_text_buffer_set_text(buffer, log_text, -1);
+	GtkTextIter end;
+	gtk_text_buffer_get_iter_at_offset(buffer, &end, -1);
+	gtk_text_buffer_insert(
+		buffer, &end, log_text, -1
+	);
+	// gtk_text_buffer_set_text(buffer, log_text, -1);
 }
 
 ConverterEmitter *converter_emitter_new(void)
@@ -199,15 +209,16 @@ void converter_emitter_start_async(ConverterEmitter *emitter, GFile *file)
 	// ffmpeg -f concat -safe 0 -i temp.txt -c copy output.mp4
 
 	// spawn a subprocess, execute ffmpeg command.
-	// ffmpeg only output stderr when using -nostdin parameter
+	// ffmpeg redirect stdout message to stderr when using -nostdin param
 	// so we just need to create a stderr pipe
 	emitter->cli = g_subprocess_new(
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
-		"ffmpeg", "-nostdin", "-y",
+		"ffmpeg",
+		"-nostdin", "-y",
 		"-f", "concat", "-safe", "0", "-i", "temp.txt", "-c", "copy",
 		pathname,
-		// "./a.out",
+		// "-i", "./0010.mp4", "-c:v", "libx264", "-c:a", "aac", "text.mp4",
 		// "-version",
                 NULL
         );
@@ -282,8 +293,7 @@ void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent)
 	);
 	gtk_text_buffer_set_text(
 		buffer,
-		"The process is running...\nDo not close this window.\n"
-		"Please wait.",
+		"Starting merge process...\n",
 		-1
 	);
 
