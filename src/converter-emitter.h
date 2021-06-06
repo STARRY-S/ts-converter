@@ -14,7 +14,7 @@ G_DECLARE_FINAL_TYPE(
 )
 
 ConverterEmitter *converter_emitter_new(void);
-void converter_emitter_poller_init(ConverterEmitter *emitter);
+void converter_emitter_start_async(ConverterEmitter *emitter, GError **error);
 void converter_emitter_win_init(ConverterEmitter* emitter, GtkWindow *parent);
 
 #endif

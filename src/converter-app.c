@@ -12,6 +12,7 @@ struct _ConverterApp
         GtkApplication parent;
         ConverterAppWindow *window;
         ConverterEmitter *emitter;
+        GError *error;
 };
 
 G_DEFINE_TYPE(ConverterApp, converter_app, GTK_TYPE_APPLICATION);
@@ -186,6 +187,10 @@ static void on_save_response(GtkFileChooserNative *dialog,
         /* emitter will finalize itself when merge window close */
         app->emitter = converter_emitter_new();
         converter_emitter_win_init(app->emitter, GTK_WINDOW(app->window));
+        converter_emitter_start_async(app->emitter, &app->error);
+        if (app->error != NULL) {
+                return;
+        }
 }
 
 static void merge_activated(GSimpleAction *action,
