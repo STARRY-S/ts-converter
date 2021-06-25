@@ -2,7 +2,7 @@
 
 #include "converter-emitter.h"
 
-#define BUFF_SIZE 512
+#define BUFF_SIZE 511
 
 /* refer: https://github.com/AlynxZhou/showmethekey */
 struct _ConverterEmitter {
@@ -17,7 +17,6 @@ struct _ConverterEmitter {
 
 	GtkWindow *window;
 	GtkWidget *text_view;
-	// GtkTextBuffer *buffer;
 	GError *error;
 };
 
@@ -70,6 +69,12 @@ static gpointer poller_function(gpointer user_data)
 			&read_error
 		);
 
+                if (read_error != NULL) {
+			fprintf(stderr, "Read line error: %s\n",
+					read_error->message);
+			g_error_free(read_error);
+		}
+
 		if (out_num > 0) {
 			outbuff[out_num] = '\0';
 			printf("%s", outbuff);
@@ -87,15 +92,22 @@ static gpointer poller_function(gpointer user_data)
 		} else if (out_num == 0) {
 			// When the subprocess finished and output buffer is
 			// clean, stop polling loop.
-			if (!emitter->running) {
-				break;
+			if (emitter->running) {
+				continue;
 			}
-		}
-
-		if (read_error != NULL) {
-			fprintf(stderr, "Read line error: %s\n",
-					read_error->message);
-			g_error_free(read_error);
+                        g_ptr_array_insert(
+                		emitter->line_array,
+                		emitter->line_array->len - 1,
+                		g_strdup("===================================\n"
+                                                "Finished!  ^_^\n")
+                	);
+                        g_idle_add_full(
+				G_PRIORITY_DEFAULT,
+				idle_function,
+				g_object_ref(emitter),
+				idle_destroy_function
+			);
+                        return NULL;
 		}
         }
 
@@ -111,19 +123,6 @@ static void subprocess_finished(GObject *object,
 {
 	ConverterEmitter *emitter = CONVERTER_EMITTER(user_data);
 	emitter->running = false;
-	g_ptr_array_insert(
-		emitter->line_array,
-		emitter->line_array->len - 1,
-		g_strdup("============================\nFinished.\n")
-	);
-	gchar *log_text = g_strjoinv(
-		"",
-		(gchar**) emitter->line_array->pdata
-	);
-
-	g_signal_emit_by_name(emitter, "update-log", log_text);
-	g_free(log_text);
-	// printf("subprocess finished!\n");
 }
 
 static void converter_emitter_init(ConverterEmitter *emitter)
@@ -169,7 +168,6 @@ static void converter_emitter_win_close(GtkWidget *object, gpointer data)
 
 	if (emitter->running) {
 		emitter->running = false;
-		// g_subprocess_force_exit(emitter->cli);
 	}
 	g_object_unref(emitter);
 }
@@ -185,7 +183,12 @@ static void converter_emitter_update_log(ConverterEmitter *emitter,
 	gtk_text_buffer_insert(
 		buffer, &end, log_text, -1
 	);
-	// gtk_text_buffer_set_text(buffer, log_text, -1);
+        gtk_text_buffer_get_iter_at_offset(buffer, &end, -1);
+        gtk_text_view_scroll_to_iter(
+                GTK_TEXT_VIEW(emitter->text_view),
+                &end,
+                0.0, FALSE, 0.0, 0.0
+        );
 }
 
 ConverterEmitter *converter_emitter_new(void)
@@ -201,6 +204,7 @@ void converter_emitter_start_async(ConverterEmitter *emitter, GFile *file)
 
 	char *pathname = g_file_get_path(file);
 	// refer: https://trac.ffmpeg.org/wiki/Concatenate
+        // examples:
 	// ffmpeg -i ./0010.mp4 -c:v libx264 -c:a aac test.mp4
 	// ffmpeg -f concat -safe 0 -i temp.txt -c copy output.mp4
 
@@ -210,12 +214,10 @@ void converter_emitter_start_async(ConverterEmitter *emitter, GFile *file)
 	emitter->cli = g_subprocess_new(
                 G_SUBPROCESS_FLAGS_STDERR_PIPE,
                 &emitter->error,
-		"ffmpeg",
-		"-nostdin", "-y",
+                "ffmpeg",
+                "-nostdin", "-y",
 		"-f", "concat", "-safe", "0", "-i", "temp.txt", "-c", "copy",
 		pathname,
-		// "-i", "./0010.mp4", "-c:v", "libx264", "-c:a", "aac", "text.mp4",
-		// "-version",
                 NULL
         );
 
